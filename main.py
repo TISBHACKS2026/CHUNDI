@@ -8,6 +8,8 @@ from supabase import create_client
 from dotenv import load_dotenv
 import uvicorn
 from fastapi import Header, HTTPException
+import tempfile
+from src.convert_to_raw_text import extract_text_from_file
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -22,8 +24,6 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-
-# ---------- Pydantic models ----------
 class LoginData(BaseModel):
     email: str
     username: str
@@ -36,7 +36,6 @@ class SignupData(BaseModel):
     password: str
 
 
-# ---------- Routes ----------
 @app.get("/", response_class=HTMLResponse)
 async def serve_login(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
@@ -127,6 +126,25 @@ async def get_me(authorization: str = Header(None)):
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+
+@app.post("/api/upload")
+async def upload_docs(request: Request):
+    data = await request.form()
+    uploaded_file = data['file']
+
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_path = temp_file.name
+        contents = await uploaded_file.read() 
+        temp_file.write(contents) 
+
+    try:
+        file_extension = uploaded_file.filename.split('.')[-1]
+        raw_text = extract_text_from_file(temp_path, file_extension)
+        print(raw_text)
+    finally:
+        os.unlink(temp_path)
+
+    return {"message": "File uploaded successfully"}
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
