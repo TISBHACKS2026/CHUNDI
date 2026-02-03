@@ -1,0 +1,8 @@
+Day 1
+Made basic login functionality
+Working on supabase functionality
+Done with basic supabase(user can login, sign up) and added some css
+Added unfunctional dashboard
+
+Day 2
+Will do document uploading and AI topic extraction + convert to raw text. Some of this may carry over to the next day
