@@ -4,7 +4,7 @@
 
 *SOLO PROJECT*
 
-**BRAIN AMP**
+**Project NAME: BRAIN AMP**
 
 This is my TISBHACKS project!!! I started this late bcs my first day is in my own private repo - i have started posting over here from today. Do not mind the team name......
 
