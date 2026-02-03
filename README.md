@@ -1,7 +1,9 @@
 # CHUNDI
 
 **CLASS 7D**
+
 *SOLO PROJECT*
+
 This is my TISBHACKS project!!! I started this late bcs my first day is in my own private repo - i have started posting over here from today. Do not mind the team name......
 
 When it is done, it is basically going to be like a NotebookLM, but better in a way(forget scalability)
