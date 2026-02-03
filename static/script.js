@@ -127,8 +127,16 @@ function toggleSidebar() {
 async function uploadFile() {
     const fileInput = document.querySelector('.file-input');
     const button = document.querySelector('.upload-btn');
+
     if (!fileInput.files || fileInput.files.length === 0) {
         alert('Please select a file first!');
+        return;
+    }
+
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+        alert("Please log in first!");
+        window.location.href = "/";
         return;
     }
 
@@ -140,18 +148,22 @@ async function uploadFile() {
     try {
         const formData = new FormData();
         formData.append('file', file);
+
         const response = await fetch('/api/upload', {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            },
             body: formData
         });
 
         if (!response.ok) {
-            console.error('Error:', response.statusText);
+            const errorData = await response.json();
+            console.error(errorData);
         }
 
         const result = await response.json();
-
-        alert(result.message);
+        alert(`Upload successful! Extracted topic: ${result.topic}`);
 
         fileInput.value = '';
 
