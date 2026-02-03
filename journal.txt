@@ -6,3 +6,8 @@ Added unfunctional dashboard
 
 Day 2
 Will do document uploading and AI topic extraction + convert to raw text. Some of this may carry over to the next day
+I will be uploading my changes that 
+1. convert it to raw text(supported for .docx, .pdf, and .txt)
+2. extract its topic using openAI api key
+3. store it in supabase table
+This will be the second most important part of the project(I think)
