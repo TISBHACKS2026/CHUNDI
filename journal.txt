@@ -16,3 +16,10 @@ Done uploading step 1(convert it to raw text)
 Will work on step 2(extract its topic using openAI api key)
 
 AHHHHHH finally got that all wrapped up its done!!!!
+
+What to do in day 3: 
+Chat section(Where you can actually learn some stuff)
+Topics section - just add on, where you can see all your topics
+Sources section - Add new sources for the ai to use
+
+I think day 4 will be the settings page and some restyling, and day 5 will be deploying(on render, ofcourse!!!) after some final code checks and will make presentation
