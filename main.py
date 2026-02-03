@@ -7,14 +7,15 @@ from pydantic import BaseModel
 from supabase import create_client
 from dotenv import load_dotenv
 import uvicorn
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException, Depends
 import tempfile
+import openai
 from src.convert_to_raw_text import extract_text_from_file
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-
+openai.api_key = os.getenv("OPENAI_API_KEY")
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise RuntimeError("Supabase env vars not loaded")
 
@@ -35,6 +36,17 @@ class SignupData(BaseModel):
     username: str
     password: str
 
+
+def get_current_user(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    try:
+        token = authorization.replace("Bearer ", "")
+        user = supabase.auth.get_user(token).user
+        return user
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_login(request: Request):
@@ -128,23 +140,63 @@ async def get_me(authorization: str = Header(None)):
 
 
 @app.post("/api/upload")
-async def upload_docs(request: Request):
+async def upload_docs(
+        request: Request,
+        current_user=Depends(get_current_user)
+):
     data = await request.form()
     uploaded_file = data['file']
 
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         temp_path = temp_file.name
-        contents = await uploaded_file.read() 
-        temp_file.write(contents) 
+        contents = await uploaded_file.read()
+        temp_file.write(contents)
 
     try:
         file_extension = uploaded_file.filename.split('.')[-1]
         raw_text = extract_text_from_file(temp_path, file_extension)
-        print(raw_text)
+
+        with open("prompt/topic_extraction_prompt.md", "r") as f:
+            prompt_template = f.read()
+
+        formatted_prompt = prompt_template.replace("{TEXT}", raw_text)
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a topic extraction assistant."},
+                {"role": "user", "content": formatted_prompt}
+            ],
+            max_tokens=20,
+            temperature=0.0
+        )
+
+        topic_output = response['choices'][0]['message']['content'].strip()
+        topic = topic_output.replace("Topic:", "").strip()
+
+        print(f"Extracted Topic: {topic}")
+
+        try:
+            result = supabase.table("documents").insert({
+                "user_id": current_user.id,
+                "content": raw_text,
+                "topic": topic
+            }).execute()
+
+            print(f"Saved to database: {result}")
+
+        except Exception as db_error:
+            print(f"Database error: {db_error}")
+
     finally:
         os.unlink(temp_path)
 
-    return {"message": "File uploaded successfully"}
+    return {
+        "message": "File uploaded successfully",
+        "topic": topic,
+        "user_id": current_user.id,
+        "saved_to_db": True
+    }
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
