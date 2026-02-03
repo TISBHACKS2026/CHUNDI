@@ -14,3 +14,5 @@ This will be the second most important part of the project(I think)
 
 Done uploading step 1(convert it to raw text)
 Will work on step 2(extract its topic using openAI api key)
+
+AHHHHHH finally got that all wrapped up its done!!!!
