@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            width: 320px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        label {
+            font-size: 14px;
+            margin-top: 12px;
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            margin-top: 16px;
+            padding: 10px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .login-link {
+            display: block;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+        .login-link a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sign Up</h1>
+
+        <label for="email">Email</label>
+        <input type="text" id="email" placeholder="you@example.com">
+
+        <label for="username">Username (display name)</label>
+        <input type="text" id="username" placeholder="Your display name">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="≥6 characters">
+
+        <button onclick="sendSignup()">Sign Up</button>
+
+        <div id="error" class="error"></div>
+
+        <div class="login-link">
+            <a href="/">Already have an account? Login</a>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
