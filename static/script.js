@@ -122,3 +122,44 @@ function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('collapsed');
 }
+
+
+async function uploadFile() {
+    const fileInput = document.querySelector('.file-input');
+    const button = document.querySelector('.upload-btn');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select a file first!');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const originalText = button.textContent;
+    button.textContent = 'Uploading...';
+    button.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            console.error('Error:', response.statusText);
+        }
+
+        const result = await response.json();
+
+        alert(result.message);
+
+        fileInput.value = '';
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert(`Upload failed: ${error.message}`);
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
