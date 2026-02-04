@@ -176,7 +176,7 @@ async function uploadFile() {
     }
 }
 
-async function get_usersAndtopic() {
+async function get_usersAndtopic(api) {
     const token = localStorage.getItem("access_token");
     if (!token) {
         window.location.href = "/";
@@ -184,7 +184,7 @@ async function get_usersAndtopic() {
     }
 
     try {
-        const res = await fetch("/api/get_topics", {
+        const res = await fetch(api, {
             headers: {
                 "Authorization": "Bearer " + token
             }
@@ -250,5 +250,206 @@ async function get_usersAndtopic() {
     } catch (err) {
         console.error(err);
         window.location.href = "/";
+    }
+}
+
+let currentTopicId = null;
+let chatHistory = [];
+let currentChatId = null;
+async function loadChatTopics() {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        window.location.href = "/";
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/chat/topics", {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (!res.ok) {
+            console.error("Failed to load topics");
+            return;
+        }
+
+        const data = await res.json();
+        renderTopicSelector(data.topics);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderTopicSelector(topics) {
+    const container = document.getElementById("topics-container");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div style="margin-bottom: 20px;">
+            <label for="topic-select" style="font-weight: 600; margin-right: 10px;">Select Topic:</label>
+            <select id="topic-select" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">Start general discussion</option>
+                ${topics.map(topic => 
+                    `<option value="${topic.id}">${topic.topic}</option>`
+                ).join('')}
+            </select>
+        </div>
+        <div id="chat-messages" style="
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+        "></div>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="chat-input" placeholder="Type your message..." style="
+                flex: 1;
+                padding: 12px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+                font-size: 14px;
+            " onkeypress="if(event.key === 'Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()" style="
+                padding: 12px 24px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+            ">Send</button>
+        </div>
+    `;
+
+    document.getElementById("topic-select").addEventListener("change", function(e) {
+        currentTopicId = e.target.value || null;
+        clearChat();
+    });
+}
+
+function clearChat() {
+    chatHistory = [];
+    const chatMessages = document.getElementById("chat-messages");
+    if (chatMessages) {
+        chatMessages.innerHTML = "";
+    }
+}
+
+function addMessageToChat(sender, message, isUser) {
+    const chatMessages = document.getElementById("chat-messages");
+    if (!chatMessages) return;
+
+    const messageDiv = document.createElement("div");
+    messageDiv.style.marginBottom = "16px";
+    messageDiv.style.padding = "12px";
+    messageDiv.style.borderRadius = "8px";
+    messageDiv.style.background = isUser ? "#e3f2fd" : "#f5f5f5";
+    messageDiv.style.borderLeft = isUser ? "4px solid #2196f3" : "4px solid #4caf50";
+
+    messageDiv.innerHTML = `
+        <div style="font-weight: 600; margin-bottom: 4px; color: ${isUser ? '#1565c0' : '#2e7d32'}">
+            ${sender}
+        </div>
+        <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.5;">
+            ${message}
+        </div>
+    `;
+
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById("chat-input");
+    const message = input.value.trim();
+    if (!message) return;
+
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        window.location.href = "/";
+        return;
+    }
+
+    // Render user message immediately
+    addMessageToChat("You", message, true);
+    input.value = "";
+
+    try {
+        const response = await fetch("/api/chat/send", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + token
+            },
+            body: JSON.stringify({
+                topic_id: currentTopicId,   // can be null
+                chat_id: currentChatId,     // null = create new chat
+                message: message
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Chat send failed");
+        }
+
+        const data = await response.json();
+
+        // IMPORTANT: persist chat identity
+        if (!currentChatId) {
+            currentChatId = data.chat_id;
+        }
+
+        // Render AI response
+        addMessageToChat("AI Tutor", data.ai_response, false);
+
+    } catch (err) {
+        console.error(err);
+        addMessageToChat(
+            "System",
+            "Error: failed to get AI response.",
+            false
+        );
+    }
+}
+
+async function loadChatHistory(chatId) {
+    const token = localStorage.getItem("access_token");
+    if (!token || !chatId) return;
+
+    try {
+        const res = await fetch(`/api/chat/history?chat_id=${chatId}`, {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to load chat history");
+        }
+
+        const data = await res.json();
+
+        clearChat();
+        currentChatId = chatId;
+
+        data.messages.forEach(msg => {
+            addMessageToChat(
+                msg.is_user ? "You" : "AI Tutor",
+                msg.content,
+                msg.is_user
+            );
+        });
+
+    } catch (err) {
+        console.error(err);
+        addMessageToChat(
+            "System",
+            "Error: failed to load chat history.",
+            false
+        );
     }
 }
