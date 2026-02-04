@@ -197,9 +197,25 @@ async def upload_docs(
         "user_id": current_user.id,
         "saved_to_db": True
     }
+
+@app.get("/api/get_topics")
+async def get_topics(current_user=Depends(get_current_user)):
+    result_topics = supabase.table("documents").select("topic").eq("user_id",current_user.id).execute()
+    result_content = supabase.table("documents").select("content").eq("user_id",current_user.id).execute()
+    print(result_topics)
+    print(result_content)
+    return {"result_topics" : result_topics.data, "result_content" : result_content.data}
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
+@app.get("/chat", response_class=HTMLResponse)
+async def chat(request: Request):
+    return templates.TemplateResponse("chat.html", {"request": request})
+
+@app.get("/topics", response_class=HTMLResponse)
+async def chat(request: Request):
+    return templates.TemplateResponse("topics.html", {"request": request})
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8080)
