@@ -23,3 +23,6 @@ Topics section - just add on, where you can see all your topics
 Sources section - Add new sources for the ai to use
 
 I think day 4 will be the settings page and some restyling, and day 5 will be deploying(on render, ofcourse!!!) after some final code checks and will make presentation
+
+Day 3:
+Starting to work on the topics page
