@@ -30,3 +30,5 @@ Finally done with topics page - it took a bit more time than expected... will st
 
 Done with chat page - just need to add the context... more supabase tables.... I will upload my code after this is done! attaching SQL for message table right now
 Damn i thot that would be done in 40 minutes..... looks like it was actually 2 hours.... I need to work on some web scraping for search the web now...😁
+
+Commited my enhanced prompt!
