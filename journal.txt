@@ -27,3 +27,5 @@ I think day 4 will be the settings page and some restyling, and day 5 will be de
 Day 3:
 Starting to work on the topics page
 Finally done with topics page - it took a bit more time than expected... will start new chat page(THE main thing)
+
+Done with chat page - just need to add the context... more supabase tables.... I will upload my code after this is done! attaching SQL for message table right now
