@@ -10,6 +10,7 @@ import uvicorn
 from fastapi import Header, HTTPException, Depends
 import tempfile
 import openai
+import uuid
 from src.convert_to_raw_text import extract_text_from_file
 load_dotenv()
 
@@ -35,6 +36,12 @@ class SignupData(BaseModel):
     email: str
     username: str
     password: str
+
+
+class ChatMessage(BaseModel):
+    topic_id: str | None = None
+    chat_id: str | None = None
+    message: str
 
 
 def get_current_user(authorization: str = Header(None)):
@@ -197,6 +204,123 @@ async def upload_docs(
         "user_id": current_user.id,
         "saved_to_db": True
     }
+
+@app.post("/api/chat/send")
+async def send_chat_message(
+    chat_data: ChatMessage,
+    current_user=Depends(get_current_user)
+):
+    chat_id = chat_data.chat_id or str(uuid.uuid4())
+
+    # Load document context
+    document_content = ""
+    if chat_data.topic_id:
+        doc = (
+            supabase.table("documents")
+            .select("content")
+            .eq("id", chat_data.topic_id)
+            .eq("user_id", current_user.id)
+            .execute()
+        )
+        if not doc.data:
+            raise HTTPException(status_code=404, detail="Topic not found")
+        document_content = doc.data[0]["content"]
+
+    with open("prompt/prompt.md") as f:
+        tutor_prompt = f.read()
+
+    # Load chat history
+    history = (
+        supabase.table("chat_messages")
+        .select("role, content")
+        .eq("user_id", current_user.id)
+        .eq("chat_id", chat_id)
+        .order("created_at", desc=False)
+        .limit(12)
+        .execute()
+    )
+
+    messages = [
+        {"role": "system", "content": "You are an AI tutor following the specified framework."},
+        {"role": "system", "content": f"""
+DOCUMENT CONTEXT:
+{document_content[:2000] if document_content else "None"}
+
+INSTRUCTIONS:
+{tutor_prompt}
+"""}
+    ]
+
+    for m in history.data or []:
+        messages.append({"role": m["role"], "content": m["content"]})
+
+    messages.append({"role": "user", "content": chat_data.message})
+
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=500
+    )
+
+    ai_text = response["choices"][0]["message"]["content"].strip()
+
+    supabase.table("chat_messages").insert([
+        {
+            "user_id": current_user.id,
+            "topic_id": chat_data.topic_id,
+            "chat_id": chat_id,
+            "role": "user",
+            "content": chat_data.message
+        },
+        {
+            "user_id": current_user.id,
+            "topic_id": chat_data.topic_id,
+            "chat_id": chat_id,
+            "role": "assistant",
+            "content": ai_text
+        }
+    ]).execute()
+
+    return {
+        "chat_id": chat_id,
+        "ai_response": ai_text
+    }
+
+@app.get("/api/chat/list/{topic_id}")
+async def list_chats(topic_id: str, current_user=Depends(get_current_user)):
+    result = (
+        supabase.table("chat_messages")
+        .select("chat_id, created_at")
+        .eq("user_id", current_user.id)
+        .eq("topic_id", topic_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    chats = list({row["chat_id"] for row in result.data})
+    return {"chats": chats}
+
+@app.get("/api/chat/list/{topic_id}")
+async def list_chats(topic_id: str, current_user=Depends(get_current_user)):
+    result = (
+        supabase.table("chat_messages")
+        .select("chat_id, created_at")
+        .eq("user_id", current_user.id)
+        .eq("topic_id", topic_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+
+    chats = list({row["chat_id"] for row in result.data})
+    return {"chats": chats}
+
+
+
+@app.get("/api/chat/topics")
+async def get_chat_topics(current_user=Depends(get_current_user)):
+    result = supabase.table("documents").select("id, topic").eq("user_id", current_user.id).execute()
+    return {"topics": result.data}
 
 @app.get("/api/get_topics")
 async def get_topics(current_user=Depends(get_current_user)):
