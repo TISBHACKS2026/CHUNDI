@@ -175,3 +175,80 @@ async function uploadFile() {
         button.disabled = false;
     }
 }
+
+async function get_usersAndtopic() {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        window.location.href = "/";
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/get_topics", {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        });
+
+        if (!res.ok) {
+            console.error(`Error: ${res.status} - ${res.statusText}`);  // Log for debugging
+            window.location.href = "/";
+            return;
+        }
+
+        const data = await res.json();
+        const container = document.getElementById("topics-container");
+        container.innerHTML = "";
+
+        data.result_topics.forEach((topicObj, index) => {
+            const topic = topicObj.topic;
+            const content = data.result_content[index]?.content ?? "";
+
+            const wrapper = document.createElement("div");
+            wrapper.style.width = "80%";
+            wrapper.style.margin = "12px auto";
+            wrapper.style.borderRadius = "8px";
+            wrapper.style.background = "#fff";
+            wrapper.style.boxShadow = "0 2px 6px rgba(0,0,0,0.1)";
+
+            const button = document.createElement("button");
+            button.textContent = topic;
+            button.style.width = "100%";
+            button.style.padding = "14px";
+            button.style.fontSize = "1.1rem";
+            button.style.textAlign = "left";
+            button.style.border = "none";
+            button.style.background = "transparent";
+            button.style.cursor = "pointer";
+            button.style.fontWeight = "600";
+
+            const contentDiv = document.createElement("div");
+            contentDiv.style.display = "none";
+            contentDiv.style.padding = "14px";
+            contentDiv.style.borderTop = "1px solid #ddd";
+
+            const pre = document.createElement("pre");
+            pre.textContent = content;
+            pre.style.whiteSpace = "pre-wrap";
+            pre.style.margin = "0";
+
+            contentDiv.appendChild(pre);
+
+            button.onclick = () => {
+                const isOpen = contentDiv.style.display === "block";
+                contentDiv.style.display = isOpen ? "none" : "block";
+            };
+
+            wrapper.appendChild(button);
+            wrapper.appendChild(contentDiv);
+            container.appendChild(wrapper);
+        });
+
+
+
+
+    } catch (err) {
+        console.error(err);
+        window.location.href = "/";
+    }
+}
