@@ -11,6 +11,7 @@ import tempfile
 import uuid
 import uvicorn
 from src.convert_to_raw_text import extract_text_from_file
+from src.scrape_web import browse_allowed_sources
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -223,7 +224,6 @@ async def send_chat_message(
 ):
     chat_id = chat_data.chat_id or str(uuid.uuid4())
 
-    # Load document context
     document_content = ""
     if chat_data.topic_id:
         doc = (
@@ -233,14 +233,73 @@ async def send_chat_message(
             .eq("user_id", current_user.id)
             .execute()
         )
-        if not doc.data:
-            raise HTTPException(status_code=404, detail="Topic not found")
-        document_content = doc.data[0]["content"]
+        if doc.data:
+            document_content = doc.data[0]["content"]
+
+    ALLOWED_DOMAINS = [
+        "wikipedia.org",
+        "britannica.com",
+        "plato.stanford.edu",
+        "iep.utm.edu",
+        "ocw.mit.edu",
+        "openstax.org",
+        "nap.edu",
+        "arxiv.org",
+        "nasa.gov",
+        "bbc.co.uk"
+    ]
+
+    domain_selection_prompt = f"""
+You may request information from EXACTLY ONE of the following allowed domains:
+
+{", ".join(ALLOWED_DOMAINS)}
+
+If external information is useful, respond ONLY in valid JSON:
+
+{{
+  "domain": "<one allowed domain>",
+  "query": "<search query>"
+}}
+
+If no external information is needed, respond with:
+
+{{ "domain": null }}
+"""
+
+    selection = client.responses.create(
+        model="gpt-4.1-mini",
+        input=[
+            {"role": "system", "content": domain_selection_prompt},
+            {"role": "user", "content": chat_data.message}
+        ],
+    )
+
+    import json
+    try:
+        decision = json.loads(selection.output_text)
+    except Exception:
+        decision = {"domain": None}
+
+    chosen_domain = decision.get("domain")
+    query = decision.get("query", chat_data.message)
+
+    if chosen_domain not in ALLOWED_DOMAINS:
+        chosen_domain = None
+
+    # --------------------
+    # STEP 2: Backend executes scrape
+    # --------------------
+    web_context = ""
+    if chosen_domain:
+        web_context = browse_allowed_sources(
+            query=query,
+            forced_domain=chosen_domain,
+            max_pages_per_domain=2
+        )
 
     with open("prompt/prompt.md") as f:
         tutor_prompt = f.read()
 
-    # Load chat history
     history = (
         supabase.table("chat_messages")
         .select("role, content")
@@ -252,14 +311,23 @@ async def send_chat_message(
     )
 
     messages = [
-        {"role": "system", "content": "You are an AI tutor following the specified framework."},
-        {"role": "system", "content": f"""
+        {
+            "role": "system",
+            "content": "You are an AI tutor following the specified framework."
+        },
+        {
+            "role": "system",
+            "content": f"""
 DOCUMENT CONTEXT:
 {document_content[:2000] if document_content else "None"}
 
+EXTERNAL REFERENCE MATERIAL:
+{web_context[:2000] if web_context else "None"}
+
 INSTRUCTIONS:
 {tutor_prompt}
-"""}
+"""
+        }
     ]
 
     for m in history.data or []:
@@ -274,6 +342,9 @@ INSTRUCTIONS:
 
     ai_text = response.output_text.strip()
 
+    # --------------------
+    # Save messages
+    # --------------------
     supabase.table("chat_messages").insert([
         {
             "user_id": current_user.id,
@@ -295,6 +366,7 @@ INSTRUCTIONS:
         "chat_id": chat_id,
         "ai_response": ai_text
     }
+
 
 @app.get("/api/chat/list/{topic_id}")
 async def list_chats(topic_id: str, current_user=Depends(get_current_user)):
