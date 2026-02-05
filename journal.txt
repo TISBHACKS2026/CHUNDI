@@ -39,3 +39,4 @@ I will work on the web search and, a very helpful and i think unique feature, us
 Ill add link to deployed website here in a short while(Ill spend day 5 in css and fixing those stupid minor bugs)
 Added the link! Go check it out(The website is not fully complete, PLEASE DO NOT OVERUSE BECAUSE IT COSTS MONEY for the openAI API key!
 Ive added the convert the notes to raw text!!(png, jpg, jpeg). WARNING: .pdf files are actually not working... do not test them right now. .docx and .txt work.
+damnn i think there are possibilities of xss injections(with the local storage, access token is vunerable)
