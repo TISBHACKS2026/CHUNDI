@@ -6,17 +6,23 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from supabase import create_client
 from dotenv import load_dotenv
-import uvicorn
 from fastapi import Header, HTTPException, Depends
 import tempfile
-import openai
 import uuid
+import uvicorn
 from src.convert_to_raw_text import extract_text_from_file
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-openai.api_key = os.getenv("OPENAI_API_KEY")
+from openai import OpenAI
+
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY not set")
+
+client = OpenAI(api_key=api_key)
+
 if not SUPABASE_URL or not SUPABASE_ANON_KEY:
     raise RuntimeError("Supabase env vars not loaded")
 
@@ -168,17 +174,22 @@ async def upload_docs(
 
         formatted_prompt = prompt_template.replace("{TEXT}", raw_text)
 
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a topic extraction assistant."},
-                {"role": "user", "content": formatted_prompt}
+        response = client.responses.create(
+            model="gpt-4.1-mini",
+            input=[
+                {
+                    "role": "system",
+                    "content": "You are a topic extraction assistant."
+                },
+                {
+                    "role": "user",
+                    "content": formatted_prompt
+                }
             ],
-            max_tokens=20,
-            temperature=0.0
         )
 
-        topic_output = response['choices'][0]['message']['content'].strip()
+        topic_output = response.output_text.strip()
+
         topic = topic_output.replace("Topic:", "").strip()
 
         print(f"Extracted Topic: {topic}")
@@ -256,14 +267,12 @@ INSTRUCTIONS:
 
     messages.append({"role": "user", "content": chat_data.message})
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=500
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=messages,
     )
 
-    ai_text = response["choices"][0]["message"]["content"].strip()
+    ai_text = response.output_text.strip()
 
     supabase.table("chat_messages").insert([
         {
@@ -301,21 +310,6 @@ async def list_chats(topic_id: str, current_user=Depends(get_current_user)):
     chats = list({row["chat_id"] for row in result.data})
     return {"chats": chats}
 
-@app.get("/api/chat/list/{topic_id}")
-async def list_chats(topic_id: str, current_user=Depends(get_current_user)):
-    result = (
-        supabase.table("chat_messages")
-        .select("chat_id, created_at")
-        .eq("user_id", current_user.id)
-        .eq("topic_id", topic_id)
-        .order("created_at", desc=True)
-        .execute()
-    )
-
-    chats = list({row["chat_id"] for row in result.data})
-    return {"chats": chats}
-
-
 
 @app.get("/api/chat/topics")
 async def get_chat_topics(current_user=Depends(get_current_user)):
@@ -341,5 +335,6 @@ async def chat(request: Request):
 @app.get("/topics", response_class=HTMLResponse)
 async def chat(request: Request):
     return templates.TemplateResponse("topics.html", {"request": request})
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8080)
