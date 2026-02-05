@@ -32,3 +32,7 @@ Done with chat page - just need to add the context... more supabase tables.... I
 Damn i thot that would be done in 40 minutes..... looks like it was actually 2 hours.... I need to work on some web scraping for search the web now...😁
 
 Commited my enhanced prompt!
+
+Day 4:
+
+I will work on the web search and, a very helpful and i think unique feature, using an llm to convert notes(images) into text!
