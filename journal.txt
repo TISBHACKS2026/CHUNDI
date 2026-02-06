@@ -45,3 +45,5 @@ Day 5:
 Need to do a lot of work today(UI revamp, settings, add sources, prompt correciton, those stupid minor bugs)😩 ill sleep late
 O ya and update the readme file with a good description. Ill make it solve my math homework
 Also need to use that chat_id thing to store chats loll i dont think i will be able to do everythoing
+-----IMPORTANT-------
+Do not use website right now. table is bieng changed a bit, so you might face issues sorry
