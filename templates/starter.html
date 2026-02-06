@@ -1,0 +1,98 @@
+<!-- templates/starter.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Tutor Hub</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 500px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .tagline {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .features {
+            text-align: left;
+            margin: 25px 0;
+            padding-left: 20px;
+        }
+        .features li {
+            margin-bottom: 12px;
+            color: #555;
+        }
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: white;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        .btn-secondary:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Brain amp</h1>
+        <p class="tagline">
+            Upload your study materials, chat with an AI tutor, and build deep understanding.
+        </p>
+
+        <div class="features">
+            <li>Upload documents (PDF, DOCX, TXT)</li>
+            <li>Smart topic extraction</li>
+            <li>Context-aware AI tutoring</li>
+            <li>Save and review your chats</li>
+        </div>
+
+        <div class="buttons">
+            <button class="btn-primary" onclick="window.location.href='/login'">Login</button>
+            <button class="btn-secondary" onclick="window.location.href='/signup'">Sign Up</button>
+        </div>
+
+        <p style="margin-top: 25px; color: #888; font-size: 14px;">
+            Demo: Use test@example.com / password123
+        </p>
+    </div>
+</body>
+</html>
