@@ -48,3 +48,5 @@ Also need to use that chat_id thing to store chats loll i dont think i will be a
 -----IMPORTANT-------
 Do not use website right now. table is bieng changed a bit, so you might face issues sorry
 So like in a hour or so I will post my code. only prompt correciton, add sources those stupid minor bugs left. UI is great now. When i will put it here and deploy it will look good u will see
+
+All done. Deploying in process. Just have to submit video and DONE!!!
