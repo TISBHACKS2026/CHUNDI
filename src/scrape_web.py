@@ -1,18 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-
-ALLOWED_DOMAINS = [
-    "wikipedia.org",
-    "britannica.com",
-    "plato.stanford.edu",
-    "iep.utm.edu",
-    "ocw.mit.edu",
-    "openstax.org",
-    "nap.edu",
-    "arxiv.org",
-    "nasa.gov",
-    "bbc.co.uk"
-]
+from urllib.parse import quote_plus
 
 DOMAIN_SEARCH = {
     "wikipedia.org": "https://en.wikipedia.org/w/index.php?search={query}",
@@ -36,6 +24,7 @@ def fetch_clean_text(url: str) -> str:
             headers={"User-Agent": "edu-rag-bot/1.0"}
         )
         r.raise_for_status()
+
         soup = BeautifulSoup(r.text, "html.parser")
 
         for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
@@ -47,32 +36,26 @@ def fetch_clean_text(url: str) -> str:
 
         text = main.get_text(" ", strip=True)
         return " ".join(text.split())
+
     except Exception:
         return ""
 
 
 def browse_allowed_sources(
     query: str,
-    forced_domain: str | None = None,
-    max_pages_per_domain: int = 1
+    forced_domain: str,
+    max_pages: int = 1
 ) -> str:
-    collected = []
+    if forced_domain not in DOMAIN_SEARCH:
+        return ""
 
-    domains = [forced_domain] if forced_domain else ALLOWED_DOMAINS
+    search_url = DOMAIN_SEARCH[forced_domain].format(
+        query=quote_plus(query)
+    )
 
-    for domain in domains:
-        if domain not in DOMAIN_SEARCH:
-            continue
+    text = fetch_clean_text(search_url)
 
-        search_url = DOMAIN_SEARCH[domain].format(
-            query=query.replace(" ", "+")
-        )
+    if not text:
+        return ""
 
-        text = fetch_clean_text(search_url)
-        if text:
-            collected.append(f"[SOURCE: {domain}]\n{text[:3000]}")
-
-        if len(collected) >= max_pages_per_domain:
-            break
-
-    return "\n\n".join(collected)
+    return f"[SOURCE: {forced_domain}]\n{text[:3000]}"
