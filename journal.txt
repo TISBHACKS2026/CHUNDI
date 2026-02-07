@@ -50,3 +50,5 @@ Do not use website right now. table is bieng changed a bit, so you might face is
 So like in a hour or so I will post my code. only prompt correciton, add sources those stupid minor bugs left. UI is great now. When i will put it here and deploy it will look good u will see
 
 All done. Deploying in process. Just have to submit video and DONE!!!
+
+So even tho i only got into top 5, i will continue to develop this. website down right now.
